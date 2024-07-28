@@ -22,26 +22,42 @@ const Login = ({ setUser }) => {
     }
 
     try {
-      const { data, error, status } = await supabase
-        .from("users")
-        .select("*")
-        .eq("name", name)
-        .eq("pin", pin)
-        .maybeSingle();
+      // Call the verify_user_pin function
+      const { data: isValidPin, error: pinError } = await supabase.rpc(
+        "verify_user_pin",
+        {
+          user_name: name,
+          user_pin: pin,
+        }
+      );
 
-      if (status === 406 || !data || error) {
+      if (pinError || !isValidPin) {
         setError("Invalid name or pin.");
-      } else {
-        const loggedInUser = { userName: data.name, userId: data.id };
-        setCookie("blob", loggedInUser, {
-          path: "/",
-          expires: new Date(Date.now() + 604800000),
-        });
-        setUser(loggedInUser);
+        return;
       }
-    } catch (error) {
-      setError("Invalid name or pin.");
-      console.error("Error:", error.message);
+
+      // If pin is valid, fetch user details (excluding pin)
+      const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("id, name")
+        .eq("name", name)
+        .single();
+
+      if (userError || !user) {
+        setError("Login failed.");
+        return;
+      }
+
+      // Set user cookie and update state
+      const loggedInUser = { userName: user.name, userId: user.id };
+      setCookie("blob", loggedInUser, {
+        path: "/",
+        expires: new Date(Date.now() + 604800000), // 1 week
+      });
+      setUser(loggedInUser);
+    } catch (err) {
+      setError("Unexpected error during login.");
+      console.error("Unexpected error:", err.message);
     }
   };
 
@@ -56,7 +72,7 @@ const Login = ({ setUser }) => {
           autoComplete="username"
         />
         <Input
-          placeholder="Enter 4-6 digit PIN"
+          placeholder="Enter 4-digit PIN"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
           maxLength={6}
