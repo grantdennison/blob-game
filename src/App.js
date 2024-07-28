@@ -28,10 +28,13 @@ function App() {
           <Route
             path="/"
             element={
-              <StartPage setUser={setUser} setRoomId={setRoomId} user={user} />
+              <StartPage setUser={setUser} user={user} setRoomId={setRoomId} />
             }
           />
-          <Route path="/loading" element={<LoadingPage roomId={roomId} />} />
+          <Route
+            path="/loading"
+            element={<LoadingPage user={user} roomId={roomId} />}
+          />
           <Route
             path="/game"
             element={<GamePage user={user} roomId={roomId} />}

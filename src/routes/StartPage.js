@@ -9,16 +9,51 @@ import Login from "../components/Login";
 import Register from "../components/Register";
 import Logout from "../components/Logout";
 
-const StartPage = ({ setUser, setRoomId, user }) => {
+const StartPage = ({ setUser, user, setRoomId }) => {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // ################## Check if user is already logged in ##################
+
     const userCookie = getCookie("blob");
     if (userCookie) {
       setUser(userCookie);
+
+      // ################## Check if user participated in a game ##################
+
+      const fetchData = async () => {
+        const { data: userData, error } = await supabase
+          .from("users")
+          .select("room_id")
+          .eq("id", userCookie.userId)
+          .single();
+        if (error || !userData?.room_id) {
+          return;
+        }
+
+        setRoomId(userData.room_id);
+
+        const { data: roomData, error: roomError } = await supabase
+          .from("rooms")
+          .select("status")
+          .eq("id", userData.room_id)
+          .maybeSingle();
+
+        if (roomError || !roomData) {
+          return;
+        }
+
+        if (roomData.status === "waiting") {
+          navigate("/loading");
+        }
+      };
+
+      fetchData();
     }
-  }, [setUser]);
+  }, [setUser, navigate, setRoomId]);
+
+  //############### Handle Start Game ############################
 
   const handleStartGame = async () => {
     const loggedInUser = getCookie("blob");
@@ -61,7 +96,7 @@ const StartPage = ({ setUser, setRoomId, user }) => {
       roomId = newRoom.id;
     }
 
-    const { data: updatedUser, error: userUpdateError } = await supabase
+    const { error: userUpdateError } = await supabase
       .from("users")
       .update({ room_id: roomId })
       .eq("id", loggedInUser.userId)
@@ -100,6 +135,8 @@ const StartPage = ({ setUser, setRoomId, user }) => {
     setRoomId(roomId);
     navigate("/loading");
   };
+
+  // ################ End Handle Start Game #######################
 
   return (
     <Box
