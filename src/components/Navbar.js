@@ -33,6 +33,7 @@ const Navbar = ({ user }) => {
       justifyContent="space-between"
       alignItems="center"
       pl={4}
+      maxH={10}
       bg={colorMode === "light" ? "gray.200" : "gray.800"}
       color={colorMode === "light" ? "black" : "white"}
     >

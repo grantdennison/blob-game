@@ -1,95 +1,59 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabase";
-import usePlayerMovement from "../hooks/usePlayerMovement";
+import { Box } from "@chakra-ui/react";
+import useBlobs from "../hooks/useBlobs";
 
 const GamePage = ({ user, roomId }) => {
   const navigate = useNavigate();
-  console.log("user:", user);
-  console.log("roomId:", roomId);
-  //   const [blobs, setBlobs] = useState([]);
-  //   const position = usePlayerMovement({ x: 100, y: 100, size: 10 });
+  const { playerPosition, mapPosition, blobs } = useBlobs(
+    user,
+    { width: 400, height: 200 },
+    roomId
+  );
 
-  //   useEffect(() => {
-  //     const fetchBlobs = async () => {
-  //       const { data, error } = await supabase
-  //         .from("users")
-  //         .select("id, x, y, size")
-  //         .eq("room_id", roomId);
-
-  //       if (error) {
-  //         console.error("Error fetching blobs:", error);
-  //       } else {
-  //         setBlobs(data);
-  //       }
-  //     };
-
-  //     fetchBlobs();
-
-  //     const blobSubscription = supabase
-  //       .from(`users:room_id=eq.${roomId}`)
-  //       .on("UPDATE", (payload) => {
-  //         setBlobs((prevBlobs) =>
-  //           prevBlobs.map((blob) =>
-  //             blob.id === payload.new.id ? payload.new : blob
-  //           )
-  //         );
-  //       })
-  //       .subscribe();
-
-  //     return () => {
-  //       supabase.removeSubscription(blobSubscription);
-  //     };
-  //   }, [roomId]);
-
-  //   useEffect(() => {
-  //     if (blobs.length <= 1) {
-  //       navigate("/gameover");
-  //     }
-  //   }, [blobs, navigate]);
-
-  //   useEffect(() => {
-  //     const updatePosition = async () => {
-  //       const { error } = await supabase
-  //         .from("users")
-  //         .update(position)
-  //         .eq("id", user.id);
-
-  //       if (error) {
-  //         console.error("Error updating position:", error);
-  //       }
-  //     };
-
-  //     const intervalId = setInterval(updatePosition, 200); // Update every 200ms
-
-  //     return () => clearInterval(intervalId);
-  //   }, [position, user.id]);
-
-  //   return (
-  //     <div>
-  //       <h1>Game Page</h1>
-  //       {blobs.map((blob) => (
-  //         <div
-  //           key={blob.id}
-  //           style={{
-  //             position: "absolute",
-  //             left: blob.x,
-  //             top: blob.y,
-  //             width: blob.size,
-  //             height: blob.size,
-  //             backgroundColor: "blue",
-  //             borderRadius: "50%",
-  //           }}
-  //         ></div>
-  //       ))}
-  //     </div>
-  //   );
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+      return;
+    }
+  }, [user, navigate]);
 
   return (
-    <div>
-      <h1>Game Page</h1>
-      <button onClick={() => navigate("/")}>Go Back</button>
-    </div>
+    <Box position="relative" width="100vw" height="100vh" overflow="hidden">
+      <Box
+        position="absolute"
+        left={`${mapPosition.x}px`}
+        top={`${mapPosition.y}px`}
+        w="400px" // Map width
+        h="200px" // Map height
+        bg="gray.200" // Optional map background color
+        border="2px solid black" // Border around the map
+        boxSizing="border-box" // Ensure border is included in the box size
+      >
+        {blobs.map((blob) => (
+          <Box
+            key={blob.id}
+            position="absolute"
+            left={`${blob.x}px`}
+            top={`${blob.y}px`}
+            width={`${blob.size}px`}
+            height={`${blob.size}px`}
+            backgroundColor="blue"
+            borderRadius="50%"
+          />
+        ))}
+      </Box>
+      <Box
+        position="absolute"
+        left="50%"
+        top="50%"
+        width={`${playerPosition.size}px`}
+        height={`${playerPosition.size}px`}
+        backgroundColor="red"
+        borderRadius="50%"
+        transform="translate(-50%, -50%)"
+      />
+    </Box>
   );
 };
 

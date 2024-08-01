@@ -46,9 +46,10 @@ const StartPage = ({ setUser, user, setRoomId }) => {
 
         if (roomData.status === "waiting") {
           navigate("/loading");
+        } else if (roomData.status === "started") {
+          navigate("/game");
         }
       };
-
       fetchData();
     }
   }, [setUser, navigate, setRoomId]);
