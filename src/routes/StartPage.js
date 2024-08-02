@@ -95,6 +95,16 @@ const StartPage = ({ setUser, user, setRoomId }) => {
       }
 
       roomId = newRoom.id;
+
+      // Create initial computer blobs
+      for (let i = 0; i < 10; i++) {
+        await supabase.from("computer_blobs").insert({
+          room_id: roomId,
+          x: Math.floor(Math.random() * 1000),
+          y: Math.floor(Math.random() * 500),
+          angle: Math.random() * 2 * Math.PI,
+        });
+      }
     }
 
     const { error: userUpdateError } = await supabase
