@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Flex, Box, Text, IconButton, Button, Image } from "@chakra-ui/react";
 import { useColorMode } from "@chakra-ui/react";
+import { FaMoon, FaSun } from "react-icons/fa";
 import BlobSelect from "./BlobSelect"; // Import the BlobSelect component
-const { FaMoon, FaSun } = require("react-icons/fa");
+import { endGame } from "../components/EndGame"; // Import the endGame function
 
 const Navbar = ({ user }) => {
   const { colorMode, toggleColorMode } = useColorMode();
@@ -43,6 +44,11 @@ const Navbar = ({ user }) => {
         </Text>
       </Box>
       <Box className="right" display="flex" alignItems="center">
+        {user && (
+          <Button onClick={() => endGame(user)} mr={4} colorScheme="red">
+            End Game
+          </Button>
+        )}
         <Button onClick={() => setModalOpen(true)} mr={4}>
           Choose Your Blob
         </Button>

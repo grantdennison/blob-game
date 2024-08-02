@@ -1,45 +1,92 @@
-let prevBlobs = {};
+import { supabase } from "../config";
 
 function findBlobById(blobs, id) {
   return blobs.find((blob) => blob.id === id);
 }
 
-export const blobMovement = (data, user, setBlobs, setMap) => {
-  if (!Array.isArray(prevBlobs) || !prevBlobs.length) {
-    prevBlobs = data.map((blob) => ({ ...blob }));
+function detectCollisions(blobs) {
+  const collisions = [];
+
+  for (let i = 0; i < blobs.length; i++) {
+    for (let j = i + 1; j < blobs.length; j++) {
+      const blobA = blobs[i];
+      const blobB = blobs[j];
+      const distance = Math.sqrt(
+        (blobA.x - blobB.x) ** 2 + (blobA.y - blobB.y) ** 2
+      );
+
+      if (distance < (blobA.size + blobB.size) / 2) {
+        collisions.push([blobA, blobB]);
+      }
+    }
   }
 
-  let steps = 20; // Number of steps to reach the new position
-  const interval = 5; // interval in milliseconds
-  let step = 0;
+  return collisions;
+}
 
-  const intervalId = setInterval(() => {
-    if (step >= steps) {
-      clearInterval(intervalId);
-      return;
+async function handleCollisions(collisions, user, data, setPlayerPosition) {
+  let updatedBlobs = [...collisions];
+
+  for (const [blobA, blobB] of collisions) {
+    if (blobA.id === user.userId || blobB.id === user.userId) {
+      const playerBlob = blobA.id === user.userId ? blobA : blobB;
+      const otherBlob = blobA.id === user.userId ? blobB : blobA;
+
+      if (playerBlob.size > otherBlob.size) {
+        if (otherBlob.type === "player") {
+          playerBlob.size += 5;
+        } else {
+          playerBlob.size += 2;
+          otherBlob.x = Math.round(Math.random() * 1000);
+          otherBlob.y = Math.round(Math.random() * 500);
+
+          try {
+            await supabase
+              .from("computer_blobs")
+              .update({ x: otherBlob.x, y: otherBlob.y })
+              .eq("id", otherBlob.id);
+          } catch (error) {
+            console.error(
+              "Error updating computer blob position:",
+              error.message
+            );
+          }
+        }
+
+        setPlayerPosition((prevPlayerMovement) => {
+          return { ...prevPlayerMovement, size: playerBlob.size };
+        });
+      } else {
+        // Player loses
+        // alert("Game Over");
+      }
     }
 
-    data.forEach((blob) => {
-      const prevBlob = findBlobById(prevBlobs, blob.id);
+    updatedBlobs = updatedBlobs.map((blob) =>
+      blob.id === blobA.id ? blobA : blob.id === blobB.id ? blobB : blob
+    );
+  }
+}
 
-      if (prevBlob) {
-        const deltaX = Math.round((blob.x - prevBlob.x) / steps);
-        const deltaY = Math.round((blob.y - prevBlob.y) / steps);
+export const blobMovement = (
+  data,
+  user,
+  setBlobs,
+  setMap,
+  setPlayerPosition
+) => {
+  data.forEach((blob) => {
+    if (blob.id === user.userId) {
+      const mapPosition = {
+        x: Math.round(-(blob.x - window.innerWidth / 2)),
+        y: Math.round(-(blob.y - window.innerHeight / 2)),
+      };
+      setMap(mapPosition);
+    }
+  });
 
-        prevBlob.x += deltaX;
-        prevBlob.y += deltaY;
-      }
+  const collisions = detectCollisions(data);
+  handleCollisions(collisions, user, data, setPlayerPosition);
 
-      if (blob.id === user.userId) {
-        const mapPosition = {
-          x: Math.round(-(prevBlob.x - window.innerWidth / 2)),
-          y: Math.round(-(prevBlob.y - window.innerHeight / 2)),
-        };
-        setMap(mapPosition);
-      }
-    });
-    setBlobs(prevBlobs); // Create a new array to trigger re-render
-
-    step++;
-  }, interval);
+  setBlobs(data); // Directly set the blobs
 };

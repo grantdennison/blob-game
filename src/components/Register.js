@@ -1,7 +1,7 @@
 // src/components/Register.js
 import React, { useState } from "react";
 import { Box, Input, Button, VStack, Text } from "@chakra-ui/react";
-import { supabase } from "../supabase";
+import { supabase } from "../config";
 import { setCookie } from "./CookieService";
 
 const Register = ({ setUser }) => {

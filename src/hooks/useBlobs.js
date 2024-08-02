@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "../supabase";
+import { supabase } from "../config";
 
 const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
   const [playerPosition, setPlayerPosition] = useState({
@@ -7,16 +7,15 @@ const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
     y: 250,
     size: 20, // Default size before fetching
   });
+  const [blobs, setBlobs] = useState([]);
+  const [map, setMap] = useState({ x: 0, y: 0 });
   const lastMousePosition = useRef({
     x: window.innerWidth / 2,
     y: window.innerHeight / 2,
   });
   const [initialized, setInitialized] = useState(false);
 
-  //#############################################################################################
-  //################################# Fetch initial player data #################################
-  //#############################################################################################
-
+  // Fetch initial player data
   useEffect(() => {
     const fetchInitialPlayerData = async () => {
       if (!initialUser?.userId || initialized) return;
@@ -31,7 +30,6 @@ const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
         if (error) {
           console.error("Error fetching initial player data:", error.message);
         } else {
-          console.log("Initial player data:", data);
           setPlayerPosition({ ...initialUser, ...data });
           setInitialized(true);
         }
@@ -43,10 +41,7 @@ const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
     fetchInitialPlayerData();
   }, [initialUser, initialized]);
 
-  //#############################################################################################
-  //################################# Update player position ####################################
-  //#############################################################################################
-
+  // Update player position and fetch blobs
   useEffect(() => {
     if (!initialUser?.userId || !initialized) return;
 
@@ -61,7 +56,7 @@ const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
       setPlayerPosition((prevPlayerPosition) => {
         const deltaX = lastMousePosition.current.x - window.innerWidth / 2;
         const deltaY = lastMousePosition.current.y - window.innerHeight / 2;
-        const maxSpeed = 25; // maximum speed per interval
+        const maxSpeed = 10; // maximum speed per interval
 
         let newX =
           prevPlayerPosition.x +
@@ -77,9 +72,7 @@ const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
         return { ...prevPlayerPosition, x: newX, y: newY };
       });
 
-      //##################################################################
-      //################################# Fetch blobs ####################
-      //##################################################################
+      // Fetch blobs
       try {
         const { data, error } = await supabase.rpc("update_and_get_positions", {
           user_id: initialUser.userId,
@@ -92,16 +85,20 @@ const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
         if (error) {
           console.error("Error fetching blobs:", error.message);
         } else {
-          blobMovementCallback(data);
+          blobMovementCallback(
+            data,
+            initialUser,
+            setBlobs,
+            setMap,
+            setPlayerPosition
+          );
         }
       } catch (error) {
         console.error("Unexpected error fetching blobs:", error);
       }
     };
-    //##################################################################
-    //################### Set fetch interval ###########################
-    //##################################################################
-    const interval = setInterval(updateAndFetchBlobs, 100); // Update and fetch every 50ms
+
+    const interval = setInterval(updateAndFetchBlobs, 100); // Update and fetch every 100ms
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
@@ -116,7 +113,7 @@ const useBlobs = (initialUser, mapDimensions, roomId, blobMovementCallback) => {
     blobMovementCallback,
   ]);
 
-  return { initialUser };
+  return { playerPosition, map, blobs, setPlayerPosition };
 };
 
 export default useBlobs;

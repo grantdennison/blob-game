@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Heading, Text, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import Background from "../components/Background";
-import { supabase } from "../supabase";
+import { supabase } from "../config";
 
 const LoadingPage = ({ user, roomId }) => {
   const [countdown, setCountdown] = useState(20); // Default to 20 seconds

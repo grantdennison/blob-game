@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Box, Heading, Button, VStack } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { getCookie } from "../components/CookieService";
-import { supabase } from "../supabase";
+import { supabase } from "../config";
 import Background from "../components/Background";
 import Login from "../components/Login";
 import Register from "../components/Register";
@@ -27,7 +27,7 @@ const StartPage = ({ setUser, user, setRoomId }) => {
           .from("users")
           .select("room_id")
           .eq("id", userCookie.userId)
-          .single();
+          .maybeSingle();
         if (error || !userData?.room_id) {
           return;
         }
